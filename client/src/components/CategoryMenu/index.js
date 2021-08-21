@@ -1,18 +1,19 @@
 import React, { useEffect } from 'react';
-import { useQuery } from '@apollo/react-hooks';
+import { useQuery } from '@apollo/client';
+import { QUERY_CATEGORIES } from '../../utils/queries';
 import { useStoreContext } from '../../utils/GlobalState';
 import { UPDATE_CATEGORIES, UPDATE_CURRENT_CATEGORY } from '../../utils/actions';
-import { QUERY_CATEGORIES } from '../../utils/queries';
 import { idbPromise } from '../../utils/helpers';
 
 function CategoryMenu() {
   const [state, dispatch] = useStoreContext();
-
   const { categories } = state;
-
   const { loading, data: categoryData } = useQuery(QUERY_CATEGORIES);
+  // const categories = categoryData?.categories || [];
 
+  // waits until async useQuery function runs
   useEffect(() => {
+    // if categoryData exists or has changed from useQuery response
     if (categoryData) {
       dispatch({
         type: UPDATE_CATEGORIES,
@@ -31,6 +32,7 @@ function CategoryMenu() {
     }
   }, [categoryData, loading, dispatch]);
 
+  // update click handler to update global state instead of using prop from Home
   const handleClick = id => {
     dispatch({
       type: UPDATE_CURRENT_CATEGORY,
@@ -41,7 +43,7 @@ function CategoryMenu() {
   return (
     <div>
       <h2>Choose a Category:</h2>
-      {categories.map(item => (
+      {categories.map((item) => (
         <button
           key={item._id}
           onClick={() => {

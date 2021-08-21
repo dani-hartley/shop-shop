@@ -1,34 +1,41 @@
-import React, { useEffect } from "react";
-import ProductItem from "../ProductItem";
-import { useStoreContext } from "../../utils/GlobalState";
-import { UPDATE_PRODUCTS } from "../../utils/actions";
-import { useQuery } from '@apollo/react-hooks';
-import { QUERY_PRODUCTS } from "../../utils/queries";
-import { idbPromise } from "../../utils/helpers";
-import spinner from "../../assets/spinner.gif"
+import React, { useEffect } from 'react';
+import { useQuery } from '@apollo/client';
+import { useStoreContext } from '../../utils/GlobalState';
+import { UPDATE_PRODUCTS } from '../../utils/actions';
+
+import ProductItem from '../ProductItem';
+import { QUERY_PRODUCTS } from '../../utils/queries';
+import spinner from '../../assets/spinner.gif';
+
+import { idbPromise } from '../../utils/helpers';
 
 function ProductList() {
   const [state, dispatch] = useStoreContext();
-
   const { currentCategory } = state;
-
   const { loading, data } = useQuery(QUERY_PRODUCTS);
 
+  // const products = data?.products || [];
+
   useEffect(() => {
-    if(data) {
+    if (data) {
+      // store in global state object
       dispatch({
-           type: UPDATE_PRODUCTS,
-          products: data.products
-        });
-        data.products.forEach((product) => {
-          idbPromise('products', 'put', product);
-        });
+        type: UPDATE_PRODUCTS,
+        products: data.products
+      });
+
+      // save to IndexedDB
+      data.products.forEach((product) => {
+        idbPromise('products', 'put', product);
+      });
     } else if (!loading) {
+      // since offline, get all data from products store
       idbPromise('products', 'get').then((products) => {
+        // use retrieved data to set global state
         dispatch({
           type: UPDATE_PRODUCTS,
-         products: products
-       });
+          products: products
+        });
       });
     }
   }, [data, loading, dispatch]);
@@ -38,7 +45,9 @@ function ProductList() {
       return state.products;
     }
 
-    return state.products.filter(product => product.category._id === currentCategory);
+    return state.products.filter(
+      (product) => product.category._id === currentCategory
+    );
   }
 
   return (
@@ -46,22 +55,21 @@ function ProductList() {
       <h2>Our Products:</h2>
       {state.products.length ? (
         <div className="flex-row">
-            {filterProducts().map(product => (
-                <ProductItem
-                  key= {product._id}
-                  _id={product._id}
-                  image={product.image}
-                  name={product.name}
-                  price={product.price}
-                  quantity={product.quantity}
-                />
-            ))}
+          {filterProducts().map((product) => (
+            <ProductItem
+              key={product._id}
+              _id={product._id}
+              image={product.image}
+              name={product.name}
+              price={product.price}
+              quantity={product.quantity}
+            />
+          ))}
         </div>
       ) : (
         <h3>You haven't added any products yet!</h3>
       )}
-      { loading ? 
-      <img src={spinner} alt="loading" />: null}
+      {loading ? <img src={spinner} alt="loading" /> : null}
     </div>
   );
 }
